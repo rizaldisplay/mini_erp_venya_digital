@@ -1,9 +1,9 @@
-import { useState, useMemo, type JSXElementConstructor, type Key, type ReactElement, type ReactNode, type ReactPortal } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useMemo } from "react";
 import { Topbar } from "../components/layout/topbar";
 import { formatRupiah } from "../lib/utils";
 import { Search, ShoppingCart, Plus, Minus, Trash2, CreditCard, Banknote, QrCode, Package } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "../hooks/use-toast";
 import { dummyProducts } from "../dummy/product";
 import SuccessPayment from "../pages/successPayment";
@@ -18,6 +18,28 @@ interface Product {
     unit: string,
     image_url: string | null,
 }
+
+interface Member {
+    id: number;
+    code: string;
+    name: string;
+    level: string;
+    points: number;
+}
+
+const memberCatalog: Member[] = [
+    { id: 1, code: "VIP01", name: "Budi Santoso", level: "VIP", points: 1500 },
+    { id: 2, code: "GOLD01", name: "Sari Dewi", level: "Gold", points: 700 },
+    { id: 3, code: "SILVER01", name: "Dina Putri", level: "Silver", points: 250 },
+];
+
+const getMemberDiscountPercent = (member: Member | null) => {
+    if (!member) return 0;
+    if (member.points >= 1000) return 20;
+    if (member.points >= 500) return 10;
+    if (member.points >= 100) return 5;
+    return 0;
+};
 
 type CartItem = Product & { cartQuantity: number };
 
@@ -60,18 +82,10 @@ export default function Penjualan() {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
     const [receivedAmount, setReceivedAmount] = useState<string>("");
-    const [memberCode, setMemberCode] = useState("");
 
-    const [selectedMember, setSelectedMember] = useState<{
-        id: number;
-        code: string;
-        name: string;
-        level: string;
-        discount: number;
-    } | null>(null);
+    const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
     const products: Product[] = dummyProducts;
-    const queryClient = useQueryClient();
     const { toast } = useToast();
 
     const categories = useMemo(() => {
@@ -130,11 +144,19 @@ export default function Penjualan() {
         setCart(prev => prev.filter(item => item.id !== id));
     };
 
+    const handleMemberSelection = (memberId: string) => {
+        const selected = memberCatalog.find(member => String(member.id) === memberId) ?? null;
+        setSelectedMember(selected);
+    };
+
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.cartQuantity), 0);
-    const tax = subtotal * 0.11; // 11% PPN
-    const total = subtotal + tax;
+    const memberDiscountPercent = getMemberDiscountPercent(selectedMember);
+    const memberDiscountAmount = selectedMember ? subtotal * (memberDiscountPercent / 100) : 0;
+    const discountedSubtotal = Math.max(0, subtotal - memberDiscountAmount);
+    const tax = discountedSubtotal * 0.11; // 11% PPN
+    const total = discountedSubtotal + tax;
     const change = (parseInt(receivedAmount.replace(/\D/g, '')) || 0) - total;
-    const isCheckoutDisabled = cart.length === 0 || (paymentMethod === "CASH" && (parseInt(receivedAmount.replace(/\D/g, '')) || 0) < total);
+    // const isCheckoutDisabled = cart.length === 0 || (paymentMethod === "CASH" && (parseInt(receivedAmount.replace(/\D/g, '')) || 0) < total);
 
     const handleCheckout = () => {
         toast({
@@ -146,6 +168,7 @@ export default function Penjualan() {
         setCart([]);
         setShowPaymentModal(false);
         setReceivedAmount("");
+        setSelectedMember(null);
     };
 
     return (
@@ -298,6 +321,12 @@ export default function Penjualan() {
                                 <span>Subtotal</span>
                                 <span>{formatRupiah(subtotal)}</span>
                             </div>
+                            {selectedMember && (
+                                <div className="flex justify-between text-emerald-600">
+                                    <span>Diskon Member ({memberDiscountPercent}%)</span>
+                                    <span>-{formatRupiah(memberDiscountAmount)}</span>
+                                </div>
+                            )}
                             <div className="flex justify-between text-muted-foreground">
                                 <span>PPN (11%)</span>
                                 <span>{formatRupiah(tax)}</span>
@@ -332,8 +361,18 @@ export default function Penjualan() {
                             <h3 className="font-bold text-lg mb-6">Ringkasan Tagihan</h3>
                             <div className="bg-background rounded-xl p-4 border border-border space-y-3 mb-6">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Items ({cart.length})</span>
+                                    <span className="text-muted-foreground">Subtotal</span>
                                     <span>{formatRupiah(subtotal)}</span>
+                                </div>
+                                {selectedMember && (
+                                    <div className="flex justify-between text-sm text-emerald-600">
+                                        <span className="text-muted-foreground">Diskon Member ({memberDiscountPercent}%)</span>
+                                        <span>-{formatRupiah(memberDiscountAmount)}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Subtotal setelah diskon</span>
+                                    <span>{formatRupiah(discountedSubtotal)}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">Pajak</span>
@@ -353,6 +392,33 @@ export default function Penjualan() {
                                 <button onClick={() => setShowPaymentModal(false)} className="p-1 hover:bg-muted rounded-md text-muted-foreground">
                                     <XIcon className="w-5 h-5" />
                                 </button>
+                            </div>
+
+                            <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 mb-6">
+                                <label className="text-sm font-medium mb-2 block">Pilih Member</label>
+                                <select
+                                    value={selectedMember?.id ?? ""}
+                                    onChange={(e) => handleMemberSelection(e.target.value)}
+                                    className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary/20"
+                                >
+                                    <option value="">Pilih member</option>
+                                    {memberCatalog.map((member) => (
+                                        <option key={member.id} value={member.id}>
+                                            {member.name} - {member.level} ({member.points} poin)
+                                        </option>
+                                    ))}
+                                </select>
+                                {selectedMember && (
+                                    <div className="mt-3 rounded-lg border border-border bg-background/80 p-3">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div>
+                                                <p className="font-semibold text-sm">{selectedMember.name}</p>
+                                                <p className="text-xs text-muted-foreground">{selectedMember.level}</p>
+                                            </div>
+                                            <span className="text-sm font-semibold text-primary">Diskon {memberDiscountPercent}%</span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="grid grid-cols-3 gap-3 mb-6">
@@ -434,7 +500,7 @@ export default function Penjualan() {
     );
 }
 
-function PaymentMethodBtn({ icon: Icon, label, value, selected, onClick }: any) {
+function PaymentMethodBtn({ icon: Icon, label, selected, onClick }: any) {
     return (
         <button
             onClick={onClick}

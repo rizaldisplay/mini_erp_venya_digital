@@ -3,14 +3,8 @@ import {
   LayoutDashboard, 
   ShoppingCart, 
   Package, 
-  Boxes, 
   Users, 
   BarChart3, 
-  Tag, 
-  Receipt, 
-  Briefcase, 
-  Settings,
-  BrainCircuit,
   LogOut
 } from "lucide-react";
 import { cn } from "../../lib/utils";

@@ -1,11 +1,7 @@
-import React from 'react';
 import {
     LayoutDashboard, 
-    ShoppingBag,
     Check,
     Printer,
-    Mail,
-    FileText,
     RotateCw,
     Plus,
     ChevronRight,
@@ -74,8 +70,6 @@ export default function SuccessPayment({
     onNewTransaction,
     onPrint,
     onSendWhatsApp,
-    onSendEmail,
-    onDownloadPdf,
     onReprint
 }: SuccessPaymentProps) {
 

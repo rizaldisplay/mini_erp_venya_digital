@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useRef, useState } from "react";
 import { Topbar } from "../../../components/layout/topbar";
 import {
@@ -5,12 +6,10 @@ import {
     Plus,
     Edit2,
     Trash2,
-    UserCircle,
     Upload,
     Download,
     Barcode
 } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "../../../hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../components/ui/dialog";
 import { Input } from "../../../components/ui/input";
@@ -66,11 +65,6 @@ export default function Harga() {
         mutate: () => { },
     };
 
-    const deleteMutation = {
-        mutate: () => { },
-    };
-
-    const queryClient = useQueryClient();
     const { toast } = useToast();
 
     const handleImportClick = () => {

@@ -1,10 +1,8 @@
-import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Topbar } from "../components/layout/topbar";
 import { formatRupiah } from "../lib/utils";
 import {
     TrendingUp,
-    TrendingDown,
     DollarSign,
     CreditCard,
     ShoppingCart,
